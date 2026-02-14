@@ -65,6 +65,7 @@ export default function CostDrivers({ onOpenDrawer }: Props) {
         <DataTable
           columns={prescriberColumns}
           data={topPrescribers}
+          rowKey={(r) => r.name}
           onRowClick={() => onOpenDrawer(sampleClaimDetail)}
         />
       </div>

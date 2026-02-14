@@ -84,6 +84,7 @@ export default function ClinicalAdherence({ onOpenDrawer }: Props) {
         <DataTable
           columns={cohortColumns}
           data={adherenceCohorts}
+          rowKey={(r) => r.condition}
           onRowClick={() => onOpenDrawer(sampleClaimDetail)}
         />
       </div>

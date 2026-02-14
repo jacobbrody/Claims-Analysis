@@ -163,6 +163,12 @@ def analyze():
 @app.route("/download/<run_id>/<file_type>")
 def download(run_id, file_type):
     last_run = session.get("last_run", {})
+
+    # Validate run_id matches the session to prevent unauthorized access
+    if last_run.get("run_id") != run_id:
+        flash("File not found.", "error")
+        return redirect(url_for("index"))
+
     all_files = {}
     if last_run.get("files"):
         all_files.update(last_run["files"])

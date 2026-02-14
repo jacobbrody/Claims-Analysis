@@ -44,6 +44,7 @@ export default function OutliersWaste({ onOpenDrawer }: Props) {
         <DataTable
           columns={outlierColumns}
           data={highCostOutliers}
+          rowKey={(r) => r.memberId}
           onRowClick={() => onOpenDrawer(sampleClaimDetail)}
         />
       </div>
@@ -57,6 +58,7 @@ export default function OutliersWaste({ onOpenDrawer }: Props) {
         <DataTable
           columns={anomalyColumns}
           data={daysSupplyAnomalies}
+          rowKey={(r) => r.ndc}
           onRowClick={() => onOpenDrawer(sampleClaimDetail)}
         />
       </div>

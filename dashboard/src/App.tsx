@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import FilterBar from './components/layout/FilterBar';
@@ -26,10 +26,24 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerClaim, setDrawerClaim] = useState<ClaimDetail | null>(null);
 
-  const openDrawer = (claim: ClaimDetail) => {
+  const openDrawer = useCallback((claim: ClaimDetail) => {
     setDrawerClaim(claim);
     setDrawerOpen(true);
-  };
+  }, []);
+
+  const closeDrawer = useCallback(() => {
+    setDrawerOpen(false);
+    setDrawerClaim(null);
+  }, []);
+
+  // Close drawer on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && drawerOpen) closeDrawer();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [drawerOpen, closeDrawer]);
 
   const renderSection = () => {
     switch (activeSection) {
@@ -76,7 +90,7 @@ export default function App() {
         </div>
       </div>
 
-      <DetailDrawer claim={drawerClaim} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <DetailDrawer claim={drawerClaim} open={drawerOpen} onClose={closeDrawer} />
     </div>
   );
 }

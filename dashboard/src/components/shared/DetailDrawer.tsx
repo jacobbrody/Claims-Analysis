@@ -16,13 +16,16 @@ export default function DetailDrawer({ claim, open, onClose }: Props) {
     <>
       {/* Backdrop */}
       {open && (
-        <div className="fixed inset-0 bg-black/20 z-40 transition-opacity" onClick={onClose} />
+        <div className="fixed inset-0 bg-black/20 z-40 transition-opacity" onClick={onClose} aria-hidden="true" />
       )}
 
       {/* Drawer */}
-      <div
+      <aside
         className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out
           ${open ? 'translate-x-0' : 'translate-x-full'}`}
+        role="dialog"
+        aria-label="Claim detail"
+        aria-hidden={!open}
       >
         {claim && (
           <div className="h-full flex flex-col">
@@ -32,7 +35,7 @@ export default function DetailDrawer({ claim, open, onClose }: Props) {
                 <h3 className="text-sm font-bold text-gray-900">Claim Detail</h3>
                 <p className="text-xs text-gray-400 mt-0.5">{claim.claimId}</p>
               </div>
-              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition">
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition" aria-label="Close drawer">
                 <X size={18} className="text-gray-500" />
               </button>
             </div>
@@ -98,7 +101,7 @@ export default function DetailDrawer({ claim, open, onClose }: Props) {
             </div>
           </div>
         )}
-      </div>
+      </aside>
     </>
   );
 }

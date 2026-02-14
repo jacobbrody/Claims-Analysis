@@ -1,18 +1,20 @@
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { KpiMetric } from '../../types';
 
+// Metrics where an increase is BAD (higher = worse).
+const INVERSE_METRICS = ['Specialty % of Spend'];
+
 interface Props {
   metric: KpiMetric;
 }
 
 export default function KpiCard({ metric }: Props) {
   const positive = metric.change >= 0;
-  // For "Specialty % of Spend" an increase is bad; for others it depends.
-  // Simplify: treat positive change as green unless label hints otherwise.
-  const isGood = metric.label.includes('Generic') ? positive : !metric.label.includes('Specialty') ? !positive || metric.change <= 0 ? false : true : !positive;
-  // Simpler: just use positive = green for demo clarity
-  const color = positive ? 'text-emerald-600' : 'text-red-500';
-  const bg    = positive ? 'bg-emerald-50'    : 'bg-red-50';
+  const inversed = INVERSE_METRICS.some((m) => metric.label.includes(m));
+  const favorable = inversed ? !positive : positive;
+
+  const color = favorable ? 'text-emerald-600' : 'text-red-500';
+  const bg    = favorable ? 'bg-emerald-50'    : 'bg-red-50';
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">

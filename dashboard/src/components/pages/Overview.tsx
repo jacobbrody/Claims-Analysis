@@ -105,6 +105,7 @@ export default function Overview({ onOpenDrawer }: Props) {
           <DataTable
             columns={drugColumns}
             data={sortedDrugs}
+            rowKey={(r) => r.ndc}
             onRowClick={() => onOpenDrawer(sampleClaimDetail)}
           />
         </div>
@@ -117,6 +118,7 @@ export default function Overview({ onOpenDrawer }: Props) {
           <DataTable
             columns={planColumns}
             data={planPerformance}
+            rowKey={(r) => r.planName}
             onRowClick={() => onOpenDrawer(sampleClaimDetail)}
           />
         </div>
