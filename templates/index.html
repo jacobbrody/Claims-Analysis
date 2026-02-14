@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Upload - Pharmacy Claims Analyzer{% endblock %}
+
+{% block content %}
+<form action="{{ url_for('analyze') }}" method="POST" enctype="multipart/form-data" id="upload-form">
+
+    <!-- Tier Pricing Config -->
+    <div class="card">
+        <div class="card-title">Tier Pricing (PPPM)</div>
+        <div class="tier-grid">
+            {% for tier_name, tier_info in tier_config.items() %}
+            <div class="tier-card">
+                <div class="tier-name">{{ tier_name }}</div>
+                <div class="tier-label">{{ tier_info.label }}</div>
+                <input type="number" name="pppm_{{ tier_name }}"
+                       value="{{ tier_info.pppm }}" step="0.01" min="0">
+            </div>
+            {% endfor %}
+        </div>
+        <p class="hint" style="margin-top: 12px; font-size: .8rem; color: var(--text-muted);">
+            Adjust pricing per tier above. The highest tier drug determines a member's monthly fee.
+        </p>
+    </div>
+
+    <!-- File Uploads -->
+    <div class="grid-2">
+        <!-- Formulary -->
+        <div class="card">
+            <div class="card-title">Formulary CSV</div>
+            <div class="file-drop" id="drop-formulary">
+                <input type="file" name="formulary" accept=".csv" required
+                       onchange="showFilename(this, 'fname-formulary')">
+                <div class="icon">&#128203;</div>
+                <div class="label">Drop formulary CSV here</div>
+                <div class="sublabel">or click to browse &mdash; requires NDC, drug_name, tier columns</div>
+                <div class="filename" id="fname-formulary"></div>
+            </div>
+        </div>
+
+        <!-- Claims -->
+        <div class="card">
+            <div class="card-title">Claims CSV</div>
+            <div class="file-drop" id="drop-claims">
+                <input type="file" name="claims" accept=".csv" required
+                       onchange="showFilename(this, 'fname-claims')">
+                <div class="icon">&#128196;</div>
+                <div class="label">Drop claims CSV here</div>
+                <div class="sublabel">or click to browse &mdash; pharmacy claims with member_id, ndc, fill_date, days_supply</div>
+                <div class="filename" id="fname-claims"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Name -->
+    <div class="card">
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="client_name">Client Name</label>
+                <input type="text" id="client_name" name="client_name" placeholder="e.g. Acme Corp">
+            </div>
+            <div class="form-group">
+                <label for="compare_name">Comparison Client Name (optional)</label>
+                <input type="text" id="compare_name" name="compare_name" placeholder="e.g. Prospect Corp">
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Upload (optional) -->
+    <div class="card">
+        <div class="card-title">Comparison Claims CSV (optional)</div>
+        <div class="file-drop" id="drop-compare">
+            <input type="file" name="compare" accept=".csv"
+                   onchange="showFilename(this, 'fname-compare')">
+            <div class="icon">&#128200;</div>
+            <div class="label">Drop a second claims CSV to compare</div>
+            <div class="sublabel">Upload a prospect or alternate client to see a side-by-side analysis</div>
+            <div class="filename" id="fname-compare"></div>
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <div style="text-align: center; margin: 32px 0;">
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+            Run Analysis
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showFilename(input, targetId) {
+    const el = document.getElementById(targetId);
+    if (input.files.length > 0) {
+        el.textContent = input.files[0].name;
+        el.classList.add('visible');
+    } else {
+        el.classList.remove('visible');
+    }
+}
+
+// Drag-and-drop highlighting
+document.querySelectorAll('.file-drop').forEach(drop => {
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+    drop.addEventListener('drop', () => drop.classList.remove('drag-over'));
+});
+
+// Loading state
+document.getElementById('upload-form').addEventListener('submit', function() {
+    const btn = document.getElementById('submit-btn');
+    btn.textContent = 'Analyzing...';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+});
+</script>
+{% endblock %}
