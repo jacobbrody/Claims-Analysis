@@ -42,11 +42,16 @@ def export_unmatched_csv(unmatched_claims, output_path):
     print(f"  Unmatched claims CSV written to: {output_path}")
 
 
-def export_member_summary_csv(detail_rows, output_path):
+def export_member_summary_csv(detail_rows, output_path, tier_config=None):
     """
     Export a per-member summary: one row per member with their highest tier
     across all months and total months charged.
     """
+    cfg = tier_config if tier_config is not None else TIER_CONFIG
+
+    def _rank(tier_name):
+        return cfg.get(tier_name, {}).get("rank", 0)
+
     if not detail_rows:
         print("  No data for member summary.")
         return
@@ -68,7 +73,7 @@ def export_member_summary_csv(detail_rows, output_path):
             }
 
         m = members[mid]
-        if get_tier_rank(row["assigned_tier"]) > get_tier_rank(m["highest_tier"]):
+        if _rank(row["assigned_tier"]) > _rank(m["highest_tier"]):
             m["highest_tier"] = row["assigned_tier"]
         m["months_charged"] += 1
         m["total_pppm_charged"] += row["pppm"]
@@ -82,8 +87,8 @@ def export_member_summary_csv(detail_rows, output_path):
             "member_id": m["member_id"],
             "member_name": m["member_name"],
             "highest_tier": m["highest_tier"],
-            "tier_label": TIER_CONFIG[m["highest_tier"]]["label"],
-            "highest_tier_pppm": TIER_CONFIG[m["highest_tier"]]["pppm"],
+            "tier_label": cfg[m["highest_tier"]]["label"],
+            "highest_tier_pppm": cfg[m["highest_tier"]]["pppm"],
             "months_with_claims": m["months_charged"],
             "total_charged": m["total_pppm_charged"],
             "all_drugs": "; ".join(sorted(m["all_drugs"])),

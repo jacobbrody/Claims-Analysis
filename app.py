@@ -39,38 +39,34 @@ def get_tier_config():
 
 
 def run_analysis_pipeline(formulary_path, claims_path, client_name, run_id, tier_config):
-    """Run full analysis and return summary + file paths."""
-    # Temporarily override TIER_CONFIG for this run
-    import config
-    original = dict(config.TIER_CONFIG)
-    config.TIER_CONFIG.update(tier_config)
+    """Run full analysis and return summary + file paths.
 
-    try:
-        formulary = load_formulary(formulary_path)
-        claims_df = load_claims(claims_path)
-        detail_rows, unmatched = analyze_claims(claims_df, formulary)
-        summary = build_summary(detail_rows, unmatched)
+    Uses the passed-in tier_config directly so concurrent requests with
+    different overrides don't race on global state.
+    """
+    formulary = load_formulary(formulary_path, tier_config=tier_config)
+    claims_df = load_claims(claims_path)
+    detail_rows, unmatched = analyze_claims(claims_df, formulary, tier_config=tier_config)
+    summary = build_summary(detail_rows, unmatched, tier_config=tier_config)
 
-        prefix = f"{run_id}_"
-        detail_path = os.path.join(OUTPUT_DIR, f"{prefix}member_month_detail.csv")
-        member_path = os.path.join(OUTPUT_DIR, f"{prefix}member_summary.csv")
-        unmatched_path = os.path.join(OUTPUT_DIR, f"{prefix}unmatched_claims.csv")
+    prefix = f"{run_id}_"
+    detail_path = os.path.join(OUTPUT_DIR, f"{prefix}member_month_detail.csv")
+    member_path = os.path.join(OUTPUT_DIR, f"{prefix}member_summary.csv")
+    unmatched_path = os.path.join(OUTPUT_DIR, f"{prefix}unmatched_claims.csv")
 
-        export_detail_csv(detail_rows, detail_path)
-        export_member_summary_csv(detail_rows, member_path)
-        if unmatched:
-            export_unmatched_csv(unmatched, unmatched_path)
+    export_detail_csv(detail_rows, detail_path)
+    export_member_summary_csv(detail_rows, member_path, tier_config=tier_config)
+    if unmatched:
+        export_unmatched_csv(unmatched, unmatched_path)
 
-        files = {
-            "detail": detail_path,
-            "member_summary": member_path,
-        }
-        if unmatched:
-            files["unmatched"] = unmatched_path
+    files = {
+        "detail": detail_path,
+        "member_summary": member_path,
+    }
+    if unmatched:
+        files["unmatched"] = unmatched_path
 
-        return summary, detail_rows, unmatched, files
-    finally:
-        config.TIER_CONFIG.update(original)
+    return summary, detail_rows, unmatched, files
 
 
 @app.route("/")

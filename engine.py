@@ -23,8 +23,9 @@ def normalize_ndc(ndc_value):
     return s.zfill(11)
 
 
-def load_formulary(filepath):
+def load_formulary(filepath, tier_config=None):
     """Load formulary CSV and return a dict mapping NDC -> {drug_name, tier}."""
+    cfg = tier_config if tier_config is not None else TIER_CONFIG
     col = FORMULARY_COLUMNS
     df = pd.read_csv(filepath, dtype=str)
 
@@ -37,7 +38,7 @@ def load_formulary(filepath):
         tier = row[col["tier"]].strip()
         drug_name = row.get(col["drug_name"], "Unknown").strip()
 
-        if tier not in TIER_CONFIG:
+        if tier not in cfg:
             print(f"  WARNING: Unknown tier '{tier}' for NDC {ndc} ({drug_name}) - skipping")
             continue
 
@@ -94,17 +95,19 @@ def get_covered_months(fill_date, days_supply):
     return months
 
 
-def get_tier_rank(tier_name):
+def get_tier_rank(tier_name, tier_config=None):
     """Return the numeric rank for a tier (higher = more expensive)."""
-    return TIER_CONFIG.get(tier_name, {}).get("rank", 0)
+    cfg = tier_config if tier_config is not None else TIER_CONFIG
+    return cfg.get(tier_name, {}).get("rank", 0)
 
 
-def get_tier_pppm(tier_name):
+def get_tier_pppm(tier_name, tier_config=None):
     """Return the PPPM price for a tier."""
-    return TIER_CONFIG.get(tier_name, {}).get("pppm", 0)
+    cfg = tier_config if tier_config is not None else TIER_CONFIG
+    return cfg.get(tier_name, {}).get("pppm", 0)
 
 
-def analyze_claims(claims_df, formulary):
+def analyze_claims(claims_df, formulary, tier_config=None):
     """
     Core analysis: match claims to formulary, spread across months,
     determine highest tier per member per month.
@@ -113,7 +116,11 @@ def analyze_claims(claims_df, formulary):
         detail_rows: list of dicts, one per member per month
         unmatched_claims: list of dicts for claims with no formulary match
     """
+    cfg = tier_config if tier_config is not None else TIER_CONFIG
     col = CLAIMS_COLUMNS
+
+    def _rank(tier_name):
+        return cfg.get(tier_name, {}).get("rank", 0)
 
     # --- Step 1: Match claims to formulary and collect per-member/month tiers ---
     # Structure: member_id -> (year, month) -> {tier, drugs, claims, member_name}
@@ -164,8 +171,8 @@ def analyze_claims(claims_df, formulary):
         for ym in sorted(months_data.keys()):
             data = months_data[ym]
             # Find highest tier
-            highest_tier = max(data["tiers"], key=get_tier_rank)
-            pppm = get_tier_pppm(highest_tier)
+            highest_tier = max(data["tiers"], key=_rank)
+            pppm = cfg.get(highest_tier, {}).get("pppm", 0)
 
             detail_rows.append({
                 "member_id": member_id,
@@ -174,22 +181,27 @@ def analyze_claims(claims_df, formulary):
                 "month": ym[1],
                 "month_name": datetime(ym[0], ym[1], 1).strftime("%b %Y"),
                 "assigned_tier": highest_tier,
-                "tier_label": TIER_CONFIG[highest_tier]["label"],
+                "tier_label": cfg[highest_tier]["label"],
                 "pppm": pppm,
                 "drugs_on_claims": "; ".join(sorted(set(data["drugs"]))),
-                "all_tiers_present": "; ".join(sorted(set(data["tiers"]), key=get_tier_rank)),
+                "all_tiers_present": "; ".join(sorted(set(data["tiers"]), key=_rank)),
                 "claim_ids": "; ".join(sorted(set(data["claims"]))),
             })
 
     return detail_rows, unmatched_claims
 
 
-def build_summary(detail_rows, unmatched_claims):
+def build_summary(detail_rows, unmatched_claims, tier_config=None):
     """
     Build a summary dict from the detail analysis.
 
     Returns a dict with aggregate statistics.
     """
+    cfg = tier_config if tier_config is not None else TIER_CONFIG
+
+    def _rank(tier_name):
+        return cfg.get(tier_name, {}).get("rank", 0)
+
     if not detail_rows:
         return {
             "total_member_months": 0,
@@ -207,7 +219,7 @@ def build_summary(detail_rows, unmatched_claims):
 
     # Breakdown by tier
     tier_breakdown = {}
-    for tier_name, tier_info in sorted(TIER_CONFIG.items(), key=lambda x: x[1]["rank"]):
+    for tier_name, tier_info in sorted(cfg.items(), key=lambda x: x[1]["rank"]):
         tier_df = df[df["assigned_tier"] == tier_name]
         if len(tier_df) > 0:
             tier_breakdown[tier_name] = {
@@ -223,7 +235,7 @@ def build_summary(detail_rows, unmatched_claims):
     for _, row in df.iterrows():
         mid = row["member_id"]
         tier = row["assigned_tier"]
-        if mid not in member_highest or get_tier_rank(tier) > get_tier_rank(member_highest[mid]):
+        if mid not in member_highest or _rank(tier) > _rank(member_highest[mid]):
             member_highest[mid] = tier
 
     member_tier_counts = defaultdict(int)

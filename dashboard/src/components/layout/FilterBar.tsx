@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, X, ChevronDown } from 'lucide-react';
 
 const datePresets = ['Last 30 days', 'QTD', 'YTD', 'Custom'];
 const clients     = ['All Clients', 'Acme Corp', 'Beta Industries', 'Gamma Health', 'Delta Group', 'Epsilon Partners', 'Zeta Corp'];
@@ -34,6 +34,13 @@ export default function FilterBar() {
   const [planType, setPlanType]   = useState('All Plans');
   const [channel, setChannel]     = useState('All Channels');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    if (!applied) return;
+    const t = setTimeout(() => setApplied(false), 1400);
+    return () => clearTimeout(t);
+  }, [applied]);
 
   const toggleCat = (cat: string) => {
     setSelectedCats((prev) =>
@@ -101,8 +108,16 @@ export default function FilterBar() {
               <X size={12} /> Reset
             </button>
           )}
-          <button className="text-xs font-semibold bg-brand-600 text-white px-4 py-1.5 rounded-lg hover:bg-brand-700 transition">
-            Apply
+          <button
+            onClick={() => setApplied(true)}
+            aria-label="Apply filters"
+            className={`text-xs font-semibold px-4 py-1.5 rounded-lg transition flex items-center gap-1.5
+              ${applied
+                ? 'bg-emerald-600 text-white'
+                : 'bg-brand-600 text-white hover:bg-brand-700'
+              }`}
+          >
+            {applied ? (<><Check size={12} /> Applied</>) : 'Apply'}
           </button>
         </div>
       </div>
