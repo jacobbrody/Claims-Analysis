@@ -1,4 +1,8 @@
 output/
+uploads/
 __pycache__/
 *.pyc
 .env
+node_modules/
+dashboard/dist/
+*.tsbuildinfo
