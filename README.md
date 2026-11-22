@@ -80,6 +80,15 @@ Days supply is converted to months using `ceil(days_supply / 30)`:
 
 Months are counted starting from the fill date's month.
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+`tests/test_engine.py` covers NDC normalization, month spreading, highest-tier-wins, unmatched claims, and pins the totals for `sample_data/`. If you change pricing on purpose, update the pinned numbers in the same commit.
+
 ## CLI Options
 
 ```
